@@ -1,67 +1,33 @@
 package com.example.dentalclinic.Entity;
 
-import jakarta.persistence.Entity;
+import jakarta.persistence.*;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
+@AllArgsConstructor
+@NoArgsConstructor
+@Getter
+@Setter
 @Table(name = "users")
 public class User {
 
     @Column(name = "Username")
-    private String Username;
+    private String username;
 
     @Column(name = "PasswordHash")
-    private String PasswordHash;
+    private String passwordHash;
 
     @Column(name = "Email")
-    private String Email;
+    private String email;
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "PatentId")
-    private Long PatentId;
+    private Long patentId;
 
-    public String getUsername() {
-        return Username;
-    }
 
-    public void setUsername(String username) {
-        Username = username;
-    }
-
-    public String getPasswordHash() {
-        return PasswordHash;
-    }
-
-    public void setPasswordHash(String passwordHash) {
-        PasswordHash = passwordHash;
-    }
-
-    public String getEmail() {
-        return Email;
-    }
-
-    public void setEmail(String email) {
-        Email = email;
-    }
-
-    public Long getPatentId() {
-        return PatentId;
-    }
-
-    public void setPatentId(Long patentId) {
-        PatentId = patentId;
-    }
-
-    public User(String username, String passwordHash, String email, Long patentId) {
-        Username = username;
-        PasswordHash = passwordHash;
-        Email = email;
-        PatentId = patentId;
-    }
-
-    public User() {
-    }
 }
