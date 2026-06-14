@@ -1,26 +1,29 @@
 package com.example.dentalclinic.Entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
+
+import java.time.LocalDate;
 
 @Entity
-@Getter
-@Setter
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 @Table(name = "patients")
 public class Patient {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long patient_id;
 
-    private String Username;
-    private String Email;
-    private String Phone;
-    private String DOB;
-    private String Gender;
-    private String Address;
+    private String firstName;
+    private String lastName;
+    private String email;
+    private String phone;
+    private Integer age;
+    private LocalDate dob;
+    private String gender;
+    private String address;
 
     @OneToOne
     @JoinColumn(name ="PatentId")
@@ -29,16 +32,4 @@ public class Patient {
 
 
 
-    public Patient(String username, String email, String DOB, String address, String gender, String phone) {
-        Username = username;
-        Email = email;
-        this.DOB = DOB;
-        Address = address;
-
-        Gender = gender;
-        Phone = phone;
-    }
-
-    public Patient() {
-    }
 }
