@@ -1,28 +1,8 @@
-import { useState } from "react";
-import { Link } from "react-router";
-import { ArrowLeft, Sparkles, Calendar, Clock, User, Mail, Phone, MessageSquare, ChevronLeft, ChevronRight, Check } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router";
+import { ArrowLeft, Sparkles, Calendar, Clock, User, Mail, Phone, MessageSquare, ChevronLeft, ChevronRight, Check, Loader2 } from "lucide-react";
 import { Button } from "./ui/button";
-
-const services = [
-  { id: "general", label: "General Checkup", duration: "30 min", icon: "🦷" },
-  { id: "cleaning", label: "Teeth Cleaning", duration: "45 min", icon: "✨" },
-  { id: "whitening", label: "Teeth Whitening", duration: "60 min", icon: "⭐" },
-  { id: "braces", label: "Braces / Invisalign", duration: "90 min", icon: "😁" },
-  { id: "implants", label: "Dental Implants", duration: "120 min", icon: "🔬" },
-  { id: "emergency", label: "Emergency Care", duration: "45 min", icon: "🚨" },
-];
-
-const timeSlots = [
-  "09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM",
-  "11:00 AM", "11:30 AM", "02:00 PM", "02:30 PM",
-  "03:00 PM", "03:30 PM", "04:00 PM", "04:30 PM",
-];
-
-const doctors = [
-  { id: "dr-smith", name: "Dr. Sarah Smith", specialty: "General Dentist", avatar: "SS" },
-  { id: "dr-patel", name: "Dr. Raj Patel", specialty: "Orthodontist", avatar: "RP" },
-  { id: "dr-chen", name: "Dr. Emily Chen", specialty: "Periodontist", avatar: "EC" },
-];
+import { apiService, DentalService, Doctor, User as ApiUser } from "../services/apiService";
 
 function getDaysInMonth(year: number, month: number) {
   return new Date(year, month + 1, 0).getDate();
@@ -34,6 +14,8 @@ function getFirstDayOfMonth(year: number, month: number) {
 
 export function BookAppointment() {
   const today = new Date();
+  const navigate = useNavigate();
+
   const [step, setStep] = useState(1);
   const [selectedService, setSelectedService] = useState("");
   const [selectedDoctor, setSelectedDoctor] = useState("");
@@ -44,22 +26,93 @@ export function BookAppointment() {
   const [form, setForm] = useState({ name: "", email: "", phone: "", notes: "" });
   const [submitted, setSubmitted] = useState(false);
 
+  // Dynamic lists from backend/API
+  const [services, setServices] = useState<DentalService[]>([]);
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [timeSlots, setTimeSlots] = useState<string[]>([]);
+  
+  // Auth and Patient states
+  const [currentUser, setCurrentUser] = useState<ApiUser | null>(null);
+  const [isNewPatient, setIsNewPatient] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
   const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
   const daysOfWeek = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 
   const daysInMonth = getDaysInMonth(currentYear, currentMonth);
   const firstDay = getFirstDayOfMonth(currentYear, currentMonth);
 
+  // 1. Initial configuration fetch & login check
+  useEffect(() => {
+    const user = apiService.getCurrentUser();
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+    setCurrentUser(user);
+
+    // Load services and doctors
+    Promise.all([
+      apiService.getServices(),
+      apiService.getDoctors(),
+    ]).then(([fetchedServices, fetchedDoctors]) => {
+      setServices(fetchedServices);
+      setDoctors(fetchedDoctors);
+      setLoading(false);
+    }).catch(err => {
+      console.error("Error loading services/doctors:", err);
+      setLoading(false);
+    });
+
+    // Check if patient profile exists for this logged in user
+    apiService.getPatientByEmail(user.email).then((patient) => {
+      // Patient exists, prefill details
+      setForm({
+        name: `${patient.firstName} ${patient.lastName}`,
+        email: patient.email,
+        phone: patient.phone,
+        notes: "",
+      });
+      setIsNewPatient(false);
+    }).catch((err) => {
+      // Patient doesn't exist, we keep isNewPatient = true, and prefill email from User account
+      setForm((prev) => ({
+        ...prev,
+        name: user.username,
+        email: user.email,
+      }));
+      setIsNewPatient(true);
+    });
+  }, [navigate]);
+
+  // 2. Fetch available time slots dynamically when doctor or date changes
+  useEffect(() => {
+    if (selectedDoctor && selectedDate) {
+      const dateString = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(selectedDate).padStart(2, '0')}`;
+      apiService.getAvailableTimeSlots(selectedDoctor, dateString).then((slots) => {
+        setTimeSlots(slots);
+      }).catch(err => {
+        console.error("Error loading slots:", err);
+      });
+    } else {
+      setTimeSlots([]);
+    }
+  }, [selectedDoctor, selectedDate, currentMonth, currentYear]);
+
   const prevMonth = () => {
     if (currentMonth === 0) { setCurrentMonth(11); setCurrentYear(y => y - 1); }
     else setCurrentMonth(m => m - 1);
     setSelectedDate(null);
+    setSelectedTime("");
   };
 
   const nextMonth = () => {
     if (currentMonth === 11) { setCurrentMonth(0); setCurrentYear(y => y + 1); }
     else setCurrentMonth(m => m + 1);
     setSelectedDate(null);
+    setSelectedTime("");
   };
 
   const isDateDisabled = (day: number) => {
@@ -68,13 +121,67 @@ export function BookAppointment() {
     return date < todayMidnight || date.getDay() === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
+    if (!currentUser) return;
+
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      // 1. Create Patient record in DB if they are a new patient
+      if (isNewPatient) {
+        const nameParts = form.name.trim().split(/\s+/);
+        const firstName = nameParts[0] || "Patient";
+        const lastName = nameParts.slice(1).join(" ") || "Name";
+
+        await apiService.createPatient(currentUser.patentId, {
+          firstName,
+          lastName,
+          email: form.email,
+          phone: form.phone,
+          age: 27,
+          dob: "1999-01-01",
+          gender: "Other",
+          address: "Not Specified",
+        });
+        setIsNewPatient(false);
+      }
+
+      // 2. Book appointment
+      const dateString = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(selectedDate).padStart(2, '0')}`;
+      await apiService.createAppointment({
+        serviceId: selectedService,
+        doctorId: selectedDoctor,
+        date: dateString,
+        time: selectedTime,
+        patientName: form.name,
+        patientEmail: form.email,
+        patientPhone: form.phone,
+        notes: form.notes,
+      });
+
+      setSubmitted(true);
+    } catch (err: any) {
+      setSubmitError(err.message || "Failed to book appointment. Please check your network and details.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const selectedServiceData = services.find(s => s.id === selectedService);
   const selectedDoctorData = doctors.find(d => d.id === selectedDoctor);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#f8f6f3] via-[#fefdfb] to-[#f0f4f1] flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-10 w-10 text-[#7ba591] animate-spin mx-auto mb-4" />
+          <p className="text-[#5a6a62] font-medium">Loading dental clinic details...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (submitted) {
     return (
@@ -218,9 +325,17 @@ export function BookAppointment() {
                       : "border-[#e8e0d8] bg-white hover:border-[#7ba591]/50"
                   }`}
                 >
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#7ba591] to-[#6a9480] flex items-center justify-center mx-auto mb-4 text-white font-bold text-lg shadow-lg">
-                    {doc.avatar}
-                  </div>
+                  {doc.image ? (
+                    <img
+                      src={doc.image}
+                      alt={doc.name}
+                      className="w-16 h-16 rounded-full object-cover mx-auto mb-4 shadow-lg ring-2 ring-[#7ba591]/20"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#7ba591] to-[#6a9480] flex items-center justify-center mx-auto mb-4 text-white font-bold text-lg shadow-lg">
+                      {doc.avatar}
+                    </div>
+                  )}
                   <h3 className="font-semibold text-[#2d4538] mb-1">{doc.name}</h3>
                   <p className="text-sm text-[#8a9a90]">{doc.specialty}</p>
                   {selectedDoctor === doc.id && (
@@ -353,6 +468,12 @@ export function BookAppointment() {
               <p className="text-[#5a6a62] mb-8">Almost done! Fill in your information</p>
 
               <form onSubmit={handleSubmit} className="space-y-4">
+                {submitError && (
+                  <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-sm text-red-600">
+                    {submitError}
+                  </div>
+                )}
+
                 <div className="relative">
                   <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#8a9a90]" />
                   <input
@@ -362,6 +483,7 @@ export function BookAppointment() {
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
                     className="w-full pl-11 pr-4 py-3 rounded-xl border-2 border-[#e8e0d8] focus:border-[#7ba591] outline-none bg-white text-[#2d4538] placeholder-[#8a9a90] transition-colors"
                     required
+                    disabled={isSubmitting}
                   />
                 </div>
                 <div className="relative">
@@ -373,6 +495,7 @@ export function BookAppointment() {
                     onChange={(e) => setForm({ ...form, email: e.target.value })}
                     className="w-full pl-11 pr-4 py-3 rounded-xl border-2 border-[#e8e0d8] focus:border-[#7ba591] outline-none bg-white text-[#2d4538] placeholder-[#8a9a90] transition-colors"
                     required
+                    disabled
                   />
                 </div>
                 <div className="relative">
@@ -384,6 +507,7 @@ export function BookAppointment() {
                     onChange={(e) => setForm({ ...form, phone: e.target.value })}
                     className="w-full pl-11 pr-4 py-3 rounded-xl border-2 border-[#e8e0d8] focus:border-[#7ba591] outline-none bg-white text-[#2d4538] placeholder-[#8a9a90] transition-colors"
                     required
+                    disabled={isSubmitting}
                   />
                 </div>
                 <div className="relative">
@@ -394,14 +518,16 @@ export function BookAppointment() {
                     onChange={(e) => setForm({ ...form, notes: e.target.value })}
                     rows={4}
                     className="w-full pl-11 pr-4 py-3 rounded-xl border-2 border-[#e8e0d8] focus:border-[#7ba591] outline-none bg-white text-[#2d4538] placeholder-[#8a9a90] transition-colors resize-none"
+                    disabled={isSubmitting}
                   />
                 </div>
 
                 <div className="flex justify-between pt-2">
-                  <Button type="button" variant="outline" onClick={() => setStep(3)} className="border-[#7ba591] text-[#4a6b5a] rounded-xl px-8">
+                  <Button type="button" variant="outline" onClick={() => setStep(3)} className="border-[#7ba591] text-[#4a6b5a] rounded-xl px-8" disabled={isSubmitting}>
                     Back
                   </Button>
-                  <Button type="submit" className="bg-[#7ba591] hover:bg-[#6a9480] text-white rounded-xl px-8 shadow-lg">
+                  <Button type="submit" className="bg-[#7ba591] hover:bg-[#6a9480] text-white rounded-xl px-8 shadow-lg flex items-center gap-2" disabled={isSubmitting}>
+                    {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
                     Confirm Appointment
                   </Button>
                 </div>
@@ -437,3 +563,4 @@ export function BookAppointment() {
     </div>
   );
 }
+

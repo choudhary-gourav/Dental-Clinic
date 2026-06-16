@@ -1,20 +1,66 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
-import { Sparkles, Eye, EyeOff, Mail, Lock, User, ArrowLeft } from "lucide-react";
+import { Sparkles, Eye, EyeOff, Mail, Lock, User, ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "./ui/button";
+import { apiService } from "../services/apiService";
 
 export function LoginPage() {
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Reset messages when switching modes
+  useEffect(() => {
+    setError(null);
+    setSuccessMsg(null);
+  }, [mode]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    navigate("/book");
+    setLoading(true);
+    setError(null);
+    setSuccessMsg(null);
+
+    try {
+      if (mode === "signup") {
+        // 1. Signup the user
+        await apiService.signup(form.name, form.email, form.password);
+        setSuccessMsg("Account created successfully! Logging you in...");
+        
+        // 2. Auto-login on successful signup
+        await apiService.login(form.email, form.password);
+        setTimeout(() => {
+          navigate("/book");
+        }, 1500);
+      } else {
+        // Login the user
+        await apiService.login(form.email, form.password);
+        setSuccessMsg("Logged in successfully!");
+        setTimeout(() => {
+          navigate("/book");
+        }, 1000);
+      }
+    } catch (err: any) {
+      setError(err.message || "An unexpected error occurred. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleGoogleAuth = () => {
+    // Simulated Google Auth login, pre-populating a mock user
+    localStorage.setItem(
+      "dental_care_user",
+      JSON.stringify({
+        username: "Google User",
+        email: "googleuser@gmail.com",
+        patentId: 999,
+      })
+    );
     navigate("/book");
   };
 
@@ -60,10 +106,24 @@ export function LoginPage() {
             </p>
           </div>
 
+          {/* Feedback messages */}
+          {error && (
+            <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-sm text-red-600">
+              {error}
+            </div>
+          )}
+
+          {successMsg && (
+            <div className="mb-6 p-4 rounded-xl bg-green-50 border border-green-200 text-sm text-green-700">
+              {successMsg}
+            </div>
+          )}
+
           {/* Google Auth Button */}
           <button
             onClick={handleGoogleAuth}
-            className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border-2 border-[#e8e0d8] hover:border-[#7ba591] hover:bg-[#7ba591]/5 transition-all group mb-6"
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border-2 border-[#e8e0d8] hover:border-[#7ba591] hover:bg-[#7ba591]/5 transition-all group mb-6 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <svg width="20" height="20" viewBox="0 0 24 24">
               <path
@@ -107,6 +167,7 @@ export function LoginPage() {
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   className="w-full pl-11 pr-4 py-3 rounded-xl border-2 border-[#e8e0d8] focus:border-[#7ba591] outline-none bg-white text-[#2d4538] placeholder-[#8a9a90] transition-colors"
                   required
+                  disabled={loading}
                 />
               </div>
             )}
@@ -120,6 +181,7 @@ export function LoginPage() {
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
                 className="w-full pl-11 pr-4 py-3 rounded-xl border-2 border-[#e8e0d8] focus:border-[#7ba591] outline-none bg-white text-[#2d4538] placeholder-[#8a9a90] transition-colors"
                 required
+                disabled={loading}
               />
             </div>
 
@@ -132,11 +194,13 @@ export function LoginPage() {
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
                 className="w-full pl-11 pr-12 py-3 rounded-xl border-2 border-[#e8e0d8] focus:border-[#7ba591] outline-none bg-white text-[#2d4538] placeholder-[#8a9a90] transition-colors"
                 required
+                disabled={loading}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-[#8a9a90] hover:text-[#7ba591] transition-colors"
+                disabled={loading}
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
@@ -152,9 +216,11 @@ export function LoginPage() {
 
             <Button
               type="submit"
-              className="w-full bg-[#7ba591] hover:bg-[#6a9480] text-white py-3 rounded-xl shadow-lg hover:shadow-xl transition-all mt-2"
+              disabled={loading}
+              className="w-full bg-[#7ba591] hover:bg-[#6a9480] text-white py-3 rounded-xl shadow-lg hover:shadow-xl transition-all mt-2 flex items-center justify-center gap-2"
               size="lg"
             >
+              {loading && <Loader2 className="h-4 w-4 animate-spin" />}
               {mode === "login" ? "Sign In" : "Create Account"}
             </Button>
           </form>
@@ -165,6 +231,7 @@ export function LoginPage() {
             <button
               onClick={() => setMode(mode === "login" ? "signup" : "login")}
               className="text-[#7ba591] hover:text-[#6a9480] font-semibold transition-colors"
+              disabled={loading}
             >
               {mode === "login" ? "Sign up" : "Sign in"}
             </button>
@@ -174,3 +241,4 @@ export function LoginPage() {
     </div>
   );
 }
+

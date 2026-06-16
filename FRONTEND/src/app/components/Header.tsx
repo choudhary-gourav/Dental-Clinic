@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router";
 import { Button } from "./ui/button";
-import { Menu, X, Phone, Sparkles, LogIn } from "lucide-react";
+import { Menu, X, Phone, Sparkles, LogIn, LogOut, User as UserIcon } from "lucide-react";
+import { apiService, User } from "../services/apiService";
 
 const navigation = [
   { name: "Home", href: "#home" },
@@ -13,6 +14,17 @@ const navigation = [
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    setUser(apiService.getCurrentUser());
+  }, []);
+
+  const handleLogout = () => {
+    apiService.logout();
+    setUser(null);
+    window.location.reload();
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-[#7ba591]/10">
@@ -44,12 +56,25 @@ export function Header() {
 
           {/* Desktop CTA */}
           <div className="hidden lg:flex items-center gap-3">
-            <Link to="/login">
-              <Button variant="outline" className="border-[#7ba591] text-[#4a6b5a] hover:bg-[#7ba591]/10 rounded-xl">
-                <LogIn className="mr-2 h-4 w-4" />
-                Login
-              </Button>
-            </Link>
+            {user ? (
+              <>
+                <div className="flex items-center gap-2 mr-2 text-[#2d4538] font-medium text-sm">
+                  <UserIcon className="h-4 w-4 text-[#7ba591]" />
+                  <span>{user.username}</span>
+                </div>
+                <Button variant="outline" onClick={handleLogout} className="border-[#7ba591] text-[#4a6b5a] hover:bg-[#7ba591]/10 rounded-xl">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <Link to="/login">
+                <Button variant="outline" className="border-[#7ba591] text-[#4a6b5a] hover:bg-[#7ba591]/10 rounded-xl">
+                  <LogIn className="mr-2 h-4 w-4" />
+                  Login
+                </Button>
+              </Link>
+            )}
             <Link to="/book">
               <Button className="bg-[#7ba591] hover:bg-[#6a9480] text-white rounded-xl shadow-lg">
                 <Phone className="mr-2 h-4 w-4" />
@@ -85,12 +110,25 @@ export function Header() {
                   {item.name}
                 </a>
               ))}
-              <Link to="/login">
-                <Button variant="outline" className="border-[#7ba591] text-[#4a6b5a] rounded-xl w-full">
-                  <LogIn className="mr-2 h-4 w-4" />
-                  Login
-                </Button>
-              </Link>
+              {user ? (
+                <>
+                  <div className="flex items-center gap-2 py-2 text-[#2d4538] font-medium text-sm border-b border-[#7ba591]/10">
+                    <UserIcon className="h-4 w-4 text-[#7ba591]" />
+                    <span>{user.username}</span>
+                  </div>
+                  <Button variant="outline" onClick={handleLogout} className="border-[#7ba591] text-[#4a6b5a] rounded-xl w-full">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Logout
+                  </Button>
+                </>
+              ) : (
+                <Link to="/login">
+                  <Button variant="outline" className="border-[#7ba591] text-[#4a6b5a] rounded-xl w-full">
+                    <LogIn className="mr-2 h-4 w-4" />
+                    Login
+                  </Button>
+                </Link>
+              )}
               <Link to="/book">
                 <Button className="bg-[#7ba591] hover:bg-[#6a9480] text-white rounded-xl shadow-lg w-full">
                   <Phone className="mr-2 h-4 w-4" />

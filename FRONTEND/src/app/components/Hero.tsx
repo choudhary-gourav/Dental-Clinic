@@ -2,6 +2,7 @@ import { Link } from "react-router";
 import { Button } from "./ui/button";
 import { Calendar, Phone, MapPin } from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
+import doctorImg from "../../imports/doctor.jpg";
 
 export function Hero() {
   return (
@@ -62,8 +63,8 @@ export function Hero() {
               <div className="absolute inset-0 bg-[#2d4538]/5 rounded-3xl transform -rotate-2"></div>
               <div className="absolute inset-4 bg-white rounded-3xl shadow-2xl overflow-hidden">
                 <ImageWithFallback 
-                  src="https://images.unsplash.com/photo-1606811841689-23dfddce3e95?w=800&q=80"
-                  alt="Modern dental clinic interior"
+                  src={doctorImg}
+                  alt="Dr. Raj Patel - Lead Dentist"
                   className="w-full h-full object-cover"
                 />
               </div>
