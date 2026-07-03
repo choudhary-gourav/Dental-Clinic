@@ -226,46 +226,42 @@ class ApiService {
     ];
   }
 
-  // Swap with dynamic backend fetch: fetch(`${BASE_URL}/doctors`)
   async getDoctors(): Promise<Doctor[]> {
-    return [
-      { id: "dr-smith", name: "Dr. Sarah Smith", specialty: "General Dentist", avatar: "SS" },
-      { id: "dr-patel", name: "Dr. Raj Patel", specialty: "Orthodontist", avatar: "RP", image: doctorImg },
-      { id: "dr-chen", name: "Dr. Emily Chen", specialty: "Periodontist", avatar: "EC" },
-    ];
+    const rawDoctors = await this.request<any[]>("/doctor/alldoctor");
+    return rawDoctors.map((doc) => {
+      const initials = doc.fullname
+        .replace(/^(Dr\.|Mr\.|Ms\.)\s+/i, "")
+        .split(" ")
+        .map((n: string) => n[0])
+        .join("")
+        .toUpperCase();
+      
+      let image: string | undefined = undefined;
+      if (doc.fullname.includes("Raj Patel")) {
+        image = doctorImg;
+      }
+
+      return {
+        id: String(doc.doctor_id),
+        name: doc.fullname,
+        specialty: doc.specialization,
+        avatar: initials || "DR",
+        image,
+      };
+    });
   }
 
-  // Swap with dynamic backend fetch or query availability logic
   async getAvailableTimeSlots(doctorId: string, date: string): Promise<string[]> {
-    // Return standard available slots, could filter based on doctor & date in the future
-    return [
-      "09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM",
-      "11:00 AM", "11:30 AM", "02:00 PM", "02:30 PM",
-      "03:00 PM", "03:30 PM", "04:00 PM", "04:30 PM",
-    ];
+    return this.request<string[]>(`/appointments/available-slots?doctorId=${encodeURIComponent(doctorId)}&date=${encodeURIComponent(date)}`);
   }
 
-  // Swap with dynamic backend call: POST /appointments
   async createAppointment(appointment: Appointment): Promise<Appointment> {
-    // Currently, we simulate saving to localized memory/localStorage.
-    // When the backend AppointmentController is ready, replace this with:
-    // return this.request<Appointment>("/appointments", { method: "POST", body: JSON.stringify(appointment) });
-    const localAppointmentsJson = localStorage.getItem("dental_care_appointments") || "[]";
-    const localAppointments = JSON.parse(localAppointmentsJson) as Appointment[];
-
-    const newAppointment = {
-      ...appointment,
-      id: `apt-${Date.now()}`,
-    };
-
-    localAppointments.push(newAppointment);
-    localStorage.setItem("dental_care_appointments", JSON.stringify(localAppointments));
-
-    // Simulate minor network delay
-    await new Promise((resolve) => setTimeout(resolve, 800));
-
-    return newAppointment;
+    return this.request<Appointment>("/appointments", {
+      method: "POST",
+      body: JSON.stringify(appointment),
+    });
   }
+
 }
 
 export const apiService = new ApiService();
