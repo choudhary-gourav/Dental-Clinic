@@ -8,6 +8,7 @@ import { Contact } from "./components/Contact";
 import { Footer } from "./components/Footer";
 import { LoginPage } from "./components/LoginPage";
 import { BookAppointment } from "./components/BookAppointment";
+import { AdminDashboard } from "./components/AdminDashboard";
 
 function HomePage() {
   return (
@@ -42,6 +43,7 @@ export default function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/book" element={<BookAppointment />} />
+        <Route path="/admin" element={<AdminDashboard />} />
       </Routes>
     </BrowserRouter>
   );

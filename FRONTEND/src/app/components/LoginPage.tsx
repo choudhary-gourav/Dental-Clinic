@@ -73,14 +73,22 @@ export function LoginPage() {
       </div>
 
       <div className="w-full max-w-md relative z-10">
-        {/* Back to home */}
-        <Link
-          to="/"
-          className="inline-flex items-center gap-2 text-[#5a6a62] hover:text-[#7ba591] transition-colors mb-8 group"
-        >
-          <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
-          Back to Home
-        </Link>
+        {/* Back to home & Admin Portal */}
+        <div className="flex items-center justify-between mb-8">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 text-[#5a6a62] hover:text-[#7ba591] transition-colors group"
+          >
+            <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
+            Back to Home
+          </Link>
+          <Link
+            to="/admin"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold border-2 border-[#7ba591]/20 bg-[#7ba591]/5 text-[#4a6b5a] hover:border-[#7ba591]/65 hover:bg-[#7ba591]/10 transition-all shadow-sm"
+          >
+            Admin Portal →
+          </Link>
+        </div>
 
         <div className="bg-white rounded-3xl shadow-2xl shadow-[#7ba591]/10 p-8 border border-[#7ba591]/10">
           {/* Logo */}

@@ -52,6 +52,9 @@ export interface Doctor {
   specialty: string;
   avatar: string;
   image?: string;
+  status?: string;
+  email?: string;
+  phone?: string;
 }
 
 export interface DentalService {
@@ -79,10 +82,13 @@ const USER_KEY = "dental_care_user";
 class ApiService {
   private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
     const url = `${BASE_URL}${endpoint}`;
-    const headers = {
-      "Content-Type": "application/json",
-      ...(options?.headers || {}),
+    const headers: Record<string, string> = {
+      ...(options?.headers as Record<string, string> || {}),
     };
+
+    if (options?.body) {
+      headers["Content-Type"] = "application/json";
+    }
 
     const response = await fetch(url, {
       ...options,
@@ -247,6 +253,9 @@ class ApiService {
         specialty: doc.specialization,
         avatar: initials || "DR",
         image,
+        status: doc.status || "Active",
+        email: doc.email || "",
+        phone: doc.phone || "",
       };
     });
   }
@@ -259,6 +268,126 @@ class ApiService {
     return this.request<Appointment>("/appointments", {
       method: "POST",
       body: JSON.stringify(appointment),
+    });
+  }
+
+  async getAllAppointments(): Promise<Appointment[]> {
+    const raw = await this.request<any[]>("/appointments/all");
+    return raw.map((app) => {
+      // Extract serviceId and notes from reason if it follows "serviceId - Notes: notes"
+      let serviceId = "general";
+      let notes = "";
+      if (app.reason) {
+        const parts = app.reason.split(" - Notes: ");
+        serviceId = parts[0] || "general";
+        notes = parts[1] || "";
+      }
+
+      // Format time (e.g. from "09:00:00" to "09:00 AM")
+      let time = app.appointmentTime || "";
+      if (time && time.includes(":")) {
+        try {
+          const timeParts = time.split(":");
+          const hour = parseInt(timeParts[0], 10);
+          const min = timeParts[1];
+          const ampm = hour >= 12 ? "PM" : "AM";
+          const displayHour = hour % 12 === 0 ? 12 : hour % 12;
+          time = `${String(displayHour).padStart(2, '0')}:${min} ${ampm}`;
+        } catch (e) {
+          console.error("Failed to parse time", time, e);
+        }
+      }
+
+      // Safely extract doctor details
+      const doctorId = app.doctor ? String(app.doctor.doctor_id) : "";
+      
+      // Safely extract patient details
+      const patientName = app.patient ? `${app.patient.firstName || ""} ${app.patient.lastName || ""}`.trim() : "Unknown Patient";
+      const patientEmail = app.patient ? app.patient.email || "" : "";
+      const patientPhone = app.patient ? app.patient.phone || "" : "";
+
+      return {
+        id: String(app.appointmentid),
+        serviceId,
+        doctorId,
+        date: app.appointmentDate || "",
+        time,
+        patientName,
+        patientEmail,
+        patientPhone,
+        notes,
+        status: app.status || "CONFIRMED"
+      };
+    });
+  }
+
+  async updateAppointmentStatus(id: string, status: string): Promise<Appointment> {
+    return this.request<Appointment>(`/appointments/${id}/status?status=${encodeURIComponent(status)}`, {
+      method: "PUT",
+    });
+  }
+
+  async deleteAppointment(id: string): Promise<void> {
+    await this.request<void>(`/appointments/${id}`, {
+      method: "DELETE",
+    });
+  }
+
+  async createDoctor(doctor: { name: string; specialty: string; phone: string; email: string; status: string }): Promise<Doctor> {
+    const rawDoctor = {
+      fullname: doctor.name,
+      specialization: doctor.specialty,
+      phone: doctor.phone,
+      email: doctor.email,
+      status: doctor.status,
+    };
+    const response = await this.request<any>("/doctor/savedoctor", {
+      method: "POST",
+      body: JSON.stringify(rawDoctor),
+    });
+    return {
+      id: String(response.doctor_id),
+      name: response.fullname,
+      specialty: response.specialization,
+      avatar: response.fullname.split(" ").map((n: string) => n[0]).join("").toUpperCase(),
+      status: response.status || "Active",
+      email: response.email || "",
+      phone: response.phone || "",
+    };
+  }
+
+  async updateDoctor(id: string, doctor: { name: string; specialty: string; phone: string; email: string; status: string }): Promise<Doctor> {
+    const rawDoctor = {
+      fullname: doctor.name,
+      specialization: doctor.specialty,
+      phone: doctor.phone,
+      email: doctor.email,
+      status: doctor.status,
+    };
+    const response = await this.request<any>(`/doctor/update/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(rawDoctor),
+    });
+    return {
+      id: String(response.doctor_id),
+      name: response.fullname,
+      specialty: response.specialization,
+      avatar: response.fullname.split(" ").map((n: string) => n[0]).join("").toUpperCase(),
+      status: response.status || "Active",
+      email: response.email || "",
+      phone: response.phone || "",
+    };
+  }
+
+  async deleteDoctor(id: string): Promise<void> {
+    await this.request<void>(`/doctor/delete/${id}`, {
+      method: "DELETE",
+    });
+  }
+
+  async resetDatabase(): Promise<string> {
+    return this.request<string>("/admin/reset", {
+      method: "POST",
     });
   }
 

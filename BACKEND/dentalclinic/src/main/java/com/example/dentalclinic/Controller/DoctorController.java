@@ -38,4 +38,17 @@ public class DoctorController {
     public void deleteDoctorById(@PathVariable("id") long id){
         doctorservice.deleteDoctorById(id);
     }
+
+    @PutMapping("/update/{id}")
+    public Doctor updateDoctor(@PathVariable("id") long id, @RequestBody Doctor doctorDetails) {
+        Doctor doctor = doctorservice.findDoctorById(id);
+        doctor.setFullname(doctorDetails.getFullname());
+        doctor.setSpecialization(doctorDetails.getSpecialization());
+        doctor.setEmail(doctorDetails.getEmail());
+        doctor.setPhone(doctorDetails.getPhone());
+        if (doctorDetails.getStatus() != null) {
+            doctor.setStatus(doctorDetails.getStatus());
+        }
+        return doctorservice.savedoctor(doctor);
+    }
 }

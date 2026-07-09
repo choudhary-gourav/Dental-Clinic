@@ -103,4 +103,17 @@ public class AppointmentService {
 
         return appointmentrepo.save(appointment);
     }
+
+    public Appointment updateStatus(Long id, String status) {
+        Appointment app = findById(id);
+        app.setStatus(status.toUpperCase());
+        return appointmentrepo.save(app);
+    }
+
+    public void deleteAppointment(Long id) {
+        if (!appointmentrepo.existsById(id)) {
+            throw new RuntimeException("Appointment not found with ID: " + id);
+        }
+        appointmentrepo.deleteById(id);
+    }
 }
