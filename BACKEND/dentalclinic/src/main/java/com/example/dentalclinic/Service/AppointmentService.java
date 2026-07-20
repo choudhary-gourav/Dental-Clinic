@@ -28,6 +28,9 @@ public class AppointmentService {
     @Autowired
     private PatientRepository patientrepo;
 
+    @Autowired
+    private EmailService emailService;
+
     public Appointment bookAppointment(Appointment appointment) {
         return appointmentrepo.save(appointment);
     }
@@ -88,11 +91,9 @@ public class AppointmentService {
         appointment.setDoctor(doctor);
         appointment.setPatient(patient);
         appointment.setAppointmentDate(LocalDate.parse(dto.getDate()));
-        
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("hh:mm a", Locale.ENGLISH);
         appointment.setAppointmentTime(LocalTime.parse(dto.getTime(), formatter));
-        
 
         String reason = dto.getServiceId();
         if (dto.getNotes() != null && !dto.getNotes().trim().isEmpty()) {
@@ -101,8 +102,22 @@ public class AppointmentService {
         appointment.setReason(reason);
         appointment.setStatus("CONFIRMED");
 
-        return appointmentrepo.save(appointment);
+        // 1. Save the appointment first
+        Appointment savedAppointment = appointmentrepo.save(appointment);
+
+        // 2. Invoke email service right after saving
+        String patientFullName = patient.getFirstName() + " " + patient.getLastName();
+        emailService.sendEmail(
+                patient.getEmail(),
+                patientFullName,
+                doctor.getFullname(),
+                dto.getDate(),
+                dto.getTime()
+        );
+
+        return savedAppointment;
     }
+
 
     public Appointment updateStatus(Long id, String status) {
         Appointment app = findById(id);
@@ -115,5 +130,6 @@ public class AppointmentService {
             throw new RuntimeException("Appointment not found with ID: " + id);
         }
         appointmentrepo.deleteById(id);
+
     }
 }
