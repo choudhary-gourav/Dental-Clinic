@@ -71,8 +71,9 @@ export function BookAppointment() {
     // Check if patient profile exists for this logged in user
     apiService.getPatientByEmail(user.email).then((patient) => {
       // Patient exists, prefill details
+      const fullName = `${patient.firstName || ""} ${patient.lastName || ""}`.trim();
       setForm({
-        name: `${patient.firstName} ${patient.lastName}`,
+        name: fullName,
         email: patient.email,
         phone: patient.phone,
         notes: "",
@@ -151,7 +152,7 @@ export function BookAppointment() {
       if (isNewPatient) {
         const nameParts = form.name.trim().split(/\s+/);
         const firstName = nameParts[0] || "Patient";
-        const lastName = nameParts.slice(1).join(" ") || "Name";
+        const lastName = nameParts.slice(1).join(" ");
 
         await apiService.createPatient(currentUser.patentId, {
           firstName,

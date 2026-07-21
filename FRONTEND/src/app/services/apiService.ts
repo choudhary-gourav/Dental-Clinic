@@ -302,7 +302,9 @@ class ApiService {
       const doctorId = app.doctor ? String(app.doctor.doctor_id) : "";
       
       // Safely extract patient details
-      const patientName = app.patient ? `${app.patient.firstName || ""} ${app.patient.lastName || ""}`.trim() : "Unknown Patient";
+      const rawLastName = app.patient?.lastName || "";
+      const validLastName = rawLastName.toLowerCase() !== "name" ? rawLastName : "";
+      const patientName = app.patient ? `${app.patient.firstName || ""} ${validLastName}`.trim() : "Unknown Patient";
       const patientEmail = app.patient ? app.patient.email || "" : "";
       const patientPhone = app.patient ? app.patient.phone || "" : "";
 

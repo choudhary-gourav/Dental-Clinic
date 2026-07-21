@@ -324,15 +324,21 @@ export function AdminDashboard() {
     }));
   };
 
-  // Filtered Appointments
+  // Filtered Appointments (Active appointments only - excludes COMPLETED and CANCELLED)
   const getFilteredAppointments = () => {
     return appointments.filter(app => {
+      const statusUpper = (app.status || "CONFIRMED").toUpperCase();
+      
+      // Remove COMPLETED and CANCELLED appointments from the appointments panel view
+      if (statusUpper === "COMPLETED" || statusUpper === "CANCELLED") {
+        return false;
+      }
+
       const query = searchQuery.toLowerCase();
       const patientName = app.patientName || "Unknown Patient";
       const patientEmail = app.patientEmail || "";
       const patientPhone = app.patientPhone || "";
       const serviceId = app.serviceId || "general";
-      const status = app.status || "CONFIRMED";
 
       const matchesSearch =
         patientName.toLowerCase().includes(query) ||
@@ -340,7 +346,7 @@ export function AdminDashboard() {
         patientPhone.toLowerCase().includes(query) ||
         getServiceLabel(serviceId).toLowerCase().includes(query);
       
-      const matchesStatus = statusFilter === "ALL" || status.toUpperCase() === statusFilter;
+      const matchesStatus = statusFilter === "ALL" || statusUpper === statusFilter;
       return matchesSearch && matchesStatus;
     });
   };
@@ -483,45 +489,45 @@ export function AdminDashboard() {
       <div className="flex-1 min-w-0 flex flex-col z-10">
         
         {/* Top Header Bar */}
-        <header className="h-20 bg-white/75 backdrop-blur-md border-b border-[#e8e0d8] flex items-center justify-between px-6 sticky top-0 z-30">
+        <header className="h-20 bg-white/75 backdrop-blur-md border-b border-[#e8e0d8] flex items-center justify-between px-4 sm:px-6 sticky top-0 z-30">
           
           {/* Left panel: title / mobile hamburger */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-2 rounded-xl border border-[#e8e0d8] hover:bg-[#7ba591]/10 transition-colors"
+              className="lg:hidden p-2 rounded-xl border border-[#e8e0d8] hover:bg-[#7ba591]/10 transition-colors shrink-0"
             >
               <Menu className="h-5 w-5 text-[#2d4538]" />
             </button>
             
-            <div className="hidden sm:block">
-              <h2 className="text-lg font-bold tracking-tight text-[#2d4538] capitalize">
+            <div className="min-w-0">
+              <h2 className="text-sm sm:text-lg font-bold tracking-tight text-[#2d4538] capitalize truncate">
                 {activeTab} Management
               </h2>
-              <p className="text-[11px] text-[#8a9a90] font-medium">DentalCare Clinic Portal</p>
+              <p className="text-[10px] sm:text-[11px] text-[#8a9a90] font-medium hidden sm:block">DentalCare Clinic Portal</p>
             </div>
           </div>
 
           {/* Right panel search/notify */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
             {/* Live Search bar - displays on relevant tabs */}
             {(activeTab === "appointments" || activeTab === "patients") && (
-              <div className="relative w-48 sm:w-64">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#8a9a90]" />
+              <div className="relative w-32 sm:w-64">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#8a9a90]" />
                 <input
                   type="text"
                   placeholder={`Search ${activeTab}...`}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 text-xs font-semibold rounded-xl border border-[#e8e0d8] focus:border-[#7ba591] outline-none bg-white text-[#2d4538] placeholder-[#8a9a90] transition-colors"
+                  className="w-full pl-9 pr-3 py-1.5 sm:pl-10 sm:pr-4 sm:py-2 text-xs font-semibold rounded-xl border border-[#e8e0d8] focus:border-[#7ba591] outline-none bg-white text-[#2d4538] placeholder-[#8a9a90] transition-colors"
                 />
               </div>
             )}
 
             {/* Notification Alert Bell */}
             <div className="relative">
-              <button className="p-2.5 rounded-xl border border-[#e8e0d8] hover:bg-[#7ba591]/10 transition-colors relative">
-                <Bell className="h-4.5 w-4.5 text-[#2d4538]" />
+              <button className="p-2 sm:p-2.5 rounded-xl border border-[#e8e0d8] hover:bg-[#7ba591]/10 transition-colors relative">
+                <Bell className="h-4 w-4 sm:h-4.5 sm:w-4.5 text-[#2d4538]" />
                 {pendingCount > 0 && (
                   <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#d4a574]" />
                 )}
@@ -529,7 +535,7 @@ export function AdminDashboard() {
             </div>
 
             {/* Back to Home Button */}
-            <Link to="/" className="text-xs font-bold text-[#7ba591] hover:text-[#6a9480] transition-colors">
+            <Link to="/" className="text-xs font-bold text-[#7ba591] hover:text-[#6a9480] transition-colors hidden xs:block">
               Back to Site
             </Link>
           </div>
@@ -659,41 +665,70 @@ export function AdminDashboard() {
                         No appointments scheduled for today.
                       </div>
                     ) : (
-                      <div className="overflow-x-auto">
-                        <table className="w-full border-collapse text-left text-xs">
-                          <thead>
-                            <tr className="border-b border-[#e8e0d8]">
-                              <th className="pb-3 font-semibold text-[#8a9a90]">Patient</th>
-                              <th className="pb-3 font-semibold text-[#8a9a90]">Treatment</th>
-                              <th className="pb-3 font-semibold text-[#8a9a90]">Dentist</th>
-                              <th className="pb-3 font-semibold text-[#8a9a90]">Time</th>
-                              <th className="pb-3 font-semibold text-[#8a9a90]">Status</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-[#e8e0d8]/50">
-                            {todayAppointments.map((app) => (
-                              <tr key={app.id} className="hover:bg-[#f8f6f3]/50">
-                                <td className="py-3 font-bold text-[#2d4538]">{app.patientName}</td>
-                                <td className="py-3">{getServiceLabel(app.serviceId)}</td>
-                                <td className="py-3 font-medium">
-                                  {doctors.find(d => d.id === app.doctorId)?.name || "Default Dentist"}
-                                </td>
-                                <td className="py-3 font-semibold text-[#7ba591]">{app.time}</td>
-                                <td className="py-3">
-                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                                    app.status?.toUpperCase() === "CONFIRMED" ? "bg-green-100 text-green-800" :
-                                    app.status?.toUpperCase() === "PENDING" ? "bg-yellow-100 text-yellow-800" :
-                                    app.status?.toUpperCase() === "COMPLETED" ? "bg-blue-100 text-blue-800" :
-                                    "bg-red-100 text-red-800"
-                                  }`}>
-                                    {app.status || "CONFIRMED"}
-                                  </span>
-                                </td>
+                      <>
+                        {/* Desktop Table View */}
+                        <div className="hidden md:block overflow-x-auto">
+                          <table className="w-full border-collapse text-left text-xs">
+                            <thead>
+                              <tr className="border-b border-[#e8e0d8]">
+                                <th className="pb-3 font-semibold text-[#8a9a90]">Patient</th>
+                                <th className="pb-3 font-semibold text-[#8a9a90]">Treatment</th>
+                                <th className="pb-3 font-semibold text-[#8a9a90]">Dentist</th>
+                                <th className="pb-3 font-semibold text-[#8a9a90]">Time</th>
+                                <th className="pb-3 font-semibold text-[#8a9a90]">Status</th>
                               </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
+                            </thead>
+                            <tbody className="divide-y divide-[#e8e0d8]/50">
+                              {todayAppointments.map((app) => (
+                                <tr key={app.id} className="hover:bg-[#f8f6f3]/50">
+                                  <td className="py-3 font-bold text-[#2d4538]">{app.patientName}</td>
+                                  <td className="py-3">{getServiceLabel(app.serviceId)}</td>
+                                  <td className="py-3 font-medium">
+                                    {doctors.find(d => d.id === app.doctorId)?.name || "Default Dentist"}
+                                  </td>
+                                  <td className="py-3 font-semibold text-[#7ba591]">{app.time}</td>
+                                  <td className="py-3">
+                                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                      app.status?.toUpperCase() === "CONFIRMED" ? "bg-green-100 text-green-800" :
+                                      app.status?.toUpperCase() === "PENDING" ? "bg-yellow-100 text-yellow-800" :
+                                      app.status?.toUpperCase() === "COMPLETED" ? "bg-blue-100 text-blue-800" :
+                                      "bg-red-100 text-red-800"
+                                    }`}>
+                                      {app.status || "CONFIRMED"}
+                                    </span>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+
+                        {/* Mobile Cards View */}
+                        <div className="md:hidden space-y-3">
+                          {todayAppointments.map((app) => (
+                            <div key={app.id} className="p-4 rounded-2xl border border-[#e8e0d8] bg-[#fdfcfa] space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="font-bold text-sm text-[#2d4538]">{app.patientName}</span>
+                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                                  app.status?.toUpperCase() === "CONFIRMED" ? "bg-green-100 text-green-800" :
+                                  app.status?.toUpperCase() === "PENDING" ? "bg-yellow-100 text-yellow-800" :
+                                  app.status?.toUpperCase() === "COMPLETED" ? "bg-blue-100 text-blue-800" :
+                                  "bg-red-100 text-red-800"
+                                }`}>
+                                  {app.status || "CONFIRMED"}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between text-xs text-[#5a6a62]">
+                                <span>{getServiceLabel(app.serviceId)}</span>
+                                <span className="font-semibold text-[#7ba591]">{app.time}</span>
+                              </div>
+                              <p className="text-[11px] text-[#8a9a90]">
+                                Dentist: {doctors.find(d => d.id === app.doctorId)?.name || "Default Dentist"}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </>
                     )}
                   </div>
                 </div>
@@ -703,7 +738,7 @@ export function AdminDashboard() {
               {/* TAB 2: APPOINTMENTS                        */}
               {/* ========================================== */}
               {activeTab === "appointments" && (
-                <div className="space-y-6 animate-fade-in bg-white border border-[#e8e0d8] rounded-3xl p-6 shadow-sm">
+                <div className="space-y-6 animate-fade-in bg-white border border-[#e8e0d8] rounded-3xl p-4 md:p-6 shadow-sm">
                   {/* Title & Filter Pills */}
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#e8e0d8]">
                     <div>
@@ -713,11 +748,11 @@ export function AdminDashboard() {
 
                     {/* Filter Pills */}
                     <div className="flex flex-wrap gap-1.5">
-                      {["ALL", "PENDING", "CONFIRMED", "COMPLETED", "CANCELLED"].map(st => (
+                      {["ALL", "PENDING", "CONFIRMED"].map(st => (
                         <button
                           key={st}
                           onClick={() => setStatusFilter(st)}
-                          className={`px-3.5 py-1.5 rounded-xl text-[10px] font-bold tracking-wider uppercase transition-all cursor-pointer ${
+                          className={`px-3 py-1.5 sm:px-3.5 sm:py-1.5 rounded-xl text-[10px] font-bold tracking-wider uppercase transition-all cursor-pointer ${
                             statusFilter === st
                               ? "bg-[#7ba591] text-white shadow-sm"
                               : "border border-[#e8e0d8] text-[#5a6a62] hover:bg-[#7ba591]/10 bg-white"
@@ -734,116 +769,241 @@ export function AdminDashboard() {
                       No appointments matching search queries or filters.
                     </div>
                   ) : (
-                    <div className="overflow-x-auto relative">
-                      <table className="w-full border-collapse text-left text-xs">
-                        <thead>
-                          <tr className="border-b border-[#e8e0d8] text-[#8a9a90] font-semibold uppercase tracking-wider">
-                            <th className="pb-3.5 pl-2">Patient</th>
-                            <th className="pb-3.5">Contact</th>
-                            <th className="pb-3.5">Service</th>
-                            <th className="pb-3.5">Specialist</th>
-                            <th className="pb-3.5">Date & Time</th>
-                            <th className="pb-3.5">Status</th>
-                            <th className="pb-3.5 text-right pr-4">Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-[#e8e0d8]/50">
-                          {getFilteredAppointments().map((app) => (
-                            <tr key={app.id} className="hover:bg-[#f8f6f3]/50 transition-colors">
-                              <td className="py-4 pl-2 font-bold text-[#2d4538] text-sm">
-                                {app.patientName}
+                    <>
+                      {/* Desktop Table View */}
+                      <div className="hidden lg:block overflow-x-auto relative">
+                        <table className="w-full border-collapse text-left text-xs">
+                          <thead>
+                            <tr className="border-b border-[#e8e0d8] text-[#8a9a90] font-semibold uppercase tracking-wider">
+                              <th className="pb-3.5 pl-2">Patient</th>
+                              <th className="pb-3.5">Contact</th>
+                              <th className="pb-3.5">Service</th>
+                              <th className="pb-3.5">Specialist</th>
+                              <th className="pb-3.5">Date & Time</th>
+                              <th className="pb-3.5">Status</th>
+                              <th className="pb-3.5 text-right pr-4">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-[#e8e0d8]/50">
+                            {getFilteredAppointments().map((app) => (
+                              <tr key={app.id} className="hover:bg-[#f8f6f3]/50 transition-colors">
+                                <td className="py-4 pl-2 font-bold text-[#2d4538] text-sm">
+                                  {app.patientName}
+                                  {app.notes && (
+                                    <p className="text-[10px] text-[#8a9a90] font-normal italic mt-0.5 line-clamp-1">
+                                      Notes: {app.notes}
+                                    </p>
+                                  )}
+                                </td>
+                                <td className="py-4">
+                                  <p className="font-semibold">{app.patientEmail}</p>
+                                  <p className="text-[10px] text-[#8a9a90]">{app.patientPhone}</p>
+                                </td>
+                                <td className="py-4 font-medium text-[#2d4538]">
+                                  {getServiceLabel(app.serviceId)}
+                                </td>
+                                <td className="py-4">
+                                  {doctors.find(d => d.id === app.doctorId)?.name || "Staff"}
+                                </td>
+                                <td className="py-4">
+                                  <p className="font-bold text-[#2d4538]">{app.date}</p>
+                                  <p className="text-[10px] text-[#7ba591] font-semibold uppercase tracking-wide">
+                                    {app.time}
+                                  </p>
+                                </td>
+                                <td className="py-4">
+                                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                                    app.status?.toUpperCase() === "CONFIRMED" ? "bg-green-50 border border-green-200 text-green-700" :
+                                    app.status?.toUpperCase() === "PENDING" ? "bg-yellow-50 border border-yellow-200 text-yellow-700 animate-pulse" :
+                                    app.status?.toUpperCase() === "COMPLETED" ? "bg-blue-50 border border-blue-200 text-blue-700" :
+                                    "bg-red-50 border border-red-200 text-red-700"
+                                  }`}>
+                                    {app.status || "CONFIRMED"}
+                                  </span>
+                                </td>
+                                <td className="py-4 text-right pr-4 relative">
+                                  <div className="inline-block text-left">
+                                    <button
+                                      onClick={() => setActiveActionRow(activeActionRow === app.id ? null : (app.id || null))}
+                                      className="p-1.5 rounded-lg border border-[#e8e0d8] hover:bg-[#7ba591]/15 text-[#2d4538] transition-colors cursor-pointer"
+                                    >
+                                      <MoreVertical className="h-4 w-4" />
+                                    </button>
+                                    
+                                    {activeActionRow === app.id && (
+                                      <div className="origin-top-right absolute right-4 mt-1.5 w-44 rounded-2xl shadow-xl bg-white border border-[#e8e0d8] ring-1 ring-black/5 divide-y divide-[#e8e0d8]/40 z-50 animate-scale-in">
+                                        <div className="py-1">
+                                          <p className="text-[9px] font-bold text-[#8a9a90] px-3 py-1 uppercase tracking-wider">Change Status</p>
+                                          <button
+                                            onClick={() => app.id && handleUpdateStatus(app.id, "CONFIRMED")}
+                                            className="w-full text-left px-3.5 py-2 text-xs text-[#2d4538] hover:bg-[#f0f4f1] font-semibold flex items-center gap-2 cursor-pointer"
+                                          >
+                                            <CheckCircle className="h-3.5 w-3.5 text-green-600" />
+                                            Confirm
+                                          </button>
+                                          <button
+                                            onClick={() => app.id && handleUpdateStatus(app.id, "PENDING")}
+                                            className="w-full text-left px-3.5 py-2 text-xs text-[#2d4538] hover:bg-[#f0f4f1] font-semibold flex items-center gap-2 cursor-pointer"
+                                          >
+                                            <Clock3 className="h-3.5 w-3.5 text-yellow-600" />
+                                            Pending
+                                          </button>
+                                          <button
+                                            onClick={() => app.id && handleUpdateStatus(app.id, "COMPLETED")}
+                                            className="w-full text-left px-3.5 py-2 text-xs text-[#2d4538] hover:bg-[#f0f4f1] font-semibold flex items-center gap-2 cursor-pointer"
+                                          >
+                                            <CheckCircle className="h-3.5 w-3.5 text-blue-600" />
+                                            Completed
+                                          </button>
+                                          <button
+                                            onClick={() => app.id && handleUpdateStatus(app.id, "CANCELLED")}
+                                            className="w-full text-left px-3.5 py-2 text-xs text-[#2d4538] hover:bg-[#f0f4f1] font-semibold flex items-center gap-2 cursor-pointer"
+                                          >
+                                            <XCircle className="h-3.5 w-3.5 text-red-600" />
+                                            Cancelled
+                                          </button>
+                                        </div>
+                                        <div className="py-1">
+                                          <button
+                                            onClick={() => app.id && handleDeleteAppointment(app.id)}
+                                            className="w-full text-left px-3.5 py-2 text-xs text-red-600 hover:bg-red-50 font-bold flex items-center gap-2 cursor-pointer"
+                                          >
+                                            <Trash2 className="h-3.5 w-3.5 text-red-600" />
+                                            Delete Listing
+                                          </button>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Mobile Cards View */}
+                      <div className="lg:hidden space-y-4">
+                        {getFilteredAppointments().map((app) => (
+                          <div key={app.id} className="bg-[#fcfbf9] border border-[#e8e0d8] rounded-2xl p-4 space-y-3 shadow-xs">
+                            {/* Card Header: Patient Name + Status Badge */}
+                            <div className="flex items-start justify-between gap-2">
+                              <div>
+                                <h4 className="font-bold text-sm text-[#2d4538]">{app.patientName}</h4>
                                 {app.notes && (
-                                  <p className="text-[10px] text-[#8a9a90] font-normal italic mt-0.5 line-clamp-1">
+                                  <p className="text-[11px] text-[#8a9a90] italic mt-0.5">
                                     Notes: {app.notes}
                                   </p>
                                 )}
-                              </td>
-                              <td className="py-4">
-                                <p className="font-semibold">{app.patientEmail}</p>
-                                <p className="text-[10px] text-[#8a9a90]">{app.patientPhone}</p>
-                              </td>
-                              <td className="py-4 font-medium text-[#2d4538]">
-                                {getServiceLabel(app.serviceId)}
-                              </td>
-                              <td className="py-4">
-                                {doctors.find(d => d.id === app.doctorId)?.name || "Staff"}
-                              </td>
-                              <td className="py-4">
-                                <p className="font-bold text-[#2d4538]">{app.date}</p>
-                                <p className="text-[10px] text-[#7ba591] font-semibold uppercase tracking-wide">
-                                  {app.time}
-                                </p>
-                              </td>
-                              <td className="py-4">
-                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                                  app.status?.toUpperCase() === "CONFIRMED" ? "bg-green-50 border border-green-200 text-green-700" :
-                                  app.status?.toUpperCase() === "PENDING" ? "bg-yellow-50 border border-yellow-200 text-yellow-700 animate-pulse" :
-                                  app.status?.toUpperCase() === "COMPLETED" ? "bg-blue-50 border border-blue-200 text-blue-700" :
-                                  "bg-red-50 border border-red-200 text-red-700"
-                                }`}>
-                                  {app.status || "CONFIRMED"}
+                              </div>
+                              <span className={`shrink-0 inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                                app.status?.toUpperCase() === "CONFIRMED" ? "bg-green-50 border border-green-200 text-green-700" :
+                                app.status?.toUpperCase() === "PENDING" ? "bg-yellow-50 border border-yellow-200 text-yellow-700 animate-pulse" :
+                                app.status?.toUpperCase() === "COMPLETED" ? "bg-blue-50 border border-blue-200 text-blue-700" :
+                                "bg-red-50 border border-red-200 text-red-700"
+                              }`}>
+                                {app.status || "CONFIRMED"}
+                              </span>
+                            </div>
+
+                            {/* Info Grid */}
+                            <div className="grid grid-cols-2 gap-2 text-xs bg-white p-3 rounded-xl border border-[#e8e0d8]/60">
+                              <div>
+                                <span className="block text-[9px] font-bold text-[#8a9a90] uppercase">Service</span>
+                                <span className="font-semibold text-[#2d4538]">{getServiceLabel(app.serviceId)}</span>
+                              </div>
+                              <div>
+                                <span className="block text-[9px] font-bold text-[#8a9a90] uppercase">Specialist</span>
+                                <span className="font-medium text-[#2d4538]">
+                                  {doctors.find(d => d.id === app.doctorId)?.name || "Staff"}
                                 </span>
-                              </td>
-                              <td className="py-4 text-right pr-4 relative">
-                                <div className="inline-block text-left">
+                              </div>
+                              <div>
+                                <span className="block text-[9px] font-bold text-[#8a9a90] uppercase">Date</span>
+                                <span className="font-bold text-[#2d4538]">{app.date}</span>
+                              </div>
+                              <div>
+                                <span className="block text-[9px] font-bold text-[#8a9a90] uppercase">Time</span>
+                                <span className="font-bold text-[#7ba591] uppercase">{app.time}</span>
+                              </div>
+                            </div>
+
+                            {/* Contact Links */}
+                            <div className="flex flex-wrap items-center justify-between gap-2 text-xs pt-1">
+                              {app.patientEmail && (
+                                <a href={`mailto:${app.patientEmail}`} className="flex items-center gap-1 text-[#7ba591] font-semibold hover:underline text-[11px] truncate max-w-[180px]">
+                                  <Mail className="h-3 w-3 shrink-0" />
+                                  <span className="truncate">{app.patientEmail}</span>
+                                </a>
+                              )}
+                              {app.patientPhone && (
+                                <a href={`tel:${app.patientPhone}`} className="flex items-center gap-1 text-[#7ba591] font-semibold hover:underline text-[11px]">
+                                  <Phone className="h-3 w-3 shrink-0" />
+                                  <span>{app.patientPhone}</span>
+                                </a>
+                              )}
+                            </div>
+
+                            {/* Status & Delete Quick Action Bar */}
+                            <div className="border-t border-[#e8e0d8] pt-3 space-y-2">
+                              <p className="text-[10px] font-bold text-[#8a9a90] uppercase tracking-wider">Update Status</p>
+                              <div className="flex flex-wrap items-center justify-between gap-1.5">
+                                <div className="flex flex-wrap gap-1">
                                   <button
-                                    onClick={() => setActiveActionRow(activeActionRow === app.id ? null : (app.id || null))}
-                                    className="p-1.5 rounded-lg border border-[#e8e0d8] hover:bg-[#7ba591]/15 text-[#2d4538] transition-colors"
+                                    onClick={() => app.id && handleUpdateStatus(app.id, "CONFIRMED")}
+                                    className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                                      app.status?.toUpperCase() === "CONFIRMED"
+                                        ? "bg-green-600 text-white"
+                                        : "bg-green-50 text-green-700 hover:bg-green-100 border border-green-200"
+                                    }`}
                                   >
-                                    <MoreVertical className="h-4 w-4" />
+                                    Confirm
                                   </button>
-                                  
-                                  {activeActionRow === app.id && (
-                                    <div className="origin-top-right absolute right-4 mt-1.5 w-44 rounded-2xl shadow-xl bg-white border border-[#e8e0d8] ring-1 ring-black/5 divide-y divide-[#e8e0d8]/40 z-50 animate-scale-in">
-                                      <div className="py-1">
-                                        <p className="text-[9px] font-bold text-[#8a9a90] px-3 py-1 uppercase tracking-wider">Change Status</p>
-                                        <button
-                                          onClick={() => app.id && handleUpdateStatus(app.id, "CONFIRMED")}
-                                          className="w-full text-left px-3.5 py-2 text-xs text-[#2d4538] hover:bg-[#f0f4f1] font-semibold flex items-center gap-2 cursor-pointer"
-                                        >
-                                          <CheckCircle className="h-3.5 w-3.5 text-green-600" />
-                                          Confirm
-                                        </button>
-                                        <button
-                                          onClick={() => app.id && handleUpdateStatus(app.id, "PENDING")}
-                                          className="w-full text-left px-3.5 py-2 text-xs text-[#2d4538] hover:bg-[#f0f4f1] font-semibold flex items-center gap-2 cursor-pointer"
-                                        >
-                                          <Clock3 className="h-3.5 w-3.5 text-yellow-600" />
-                                          Pending
-                                        </button>
-                                        <button
-                                          onClick={() => app.id && handleUpdateStatus(app.id, "COMPLETED")}
-                                          className="w-full text-left px-3.5 py-2 text-xs text-[#2d4538] hover:bg-[#f0f4f1] font-semibold flex items-center gap-2 cursor-pointer"
-                                        >
-                                          <CheckCircle className="h-3.5 w-3.5 text-blue-600" />
-                                          Completed
-                                        </button>
-                                        <button
-                                          onClick={() => app.id && handleUpdateStatus(app.id, "CANCELLED")}
-                                          className="w-full text-left px-3.5 py-2 text-xs text-[#2d4538] hover:bg-[#f0f4f1] font-semibold flex items-center gap-2 cursor-pointer"
-                                        >
-                                          <XCircle className="h-3.5 w-3.5 text-red-600" />
-                                          Cancelled
-                                        </button>
-                                      </div>
-                                      <div className="py-1">
-                                        <button
-                                          onClick={() => app.id && handleDeleteAppointment(app.id)}
-                                          className="w-full text-left px-3.5 py-2 text-xs text-red-600 hover:bg-red-50 font-bold flex items-center gap-2 cursor-pointer"
-                                        >
-                                          <Trash2 className="h-3.5 w-3.5 text-red-600" />
-                                          Delete Listing
-                                        </button>
-                                      </div>
-                                    </div>
-                                  )}
+                                  <button
+                                    onClick={() => app.id && handleUpdateStatus(app.id, "PENDING")}
+                                    className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                                      app.status?.toUpperCase() === "PENDING"
+                                        ? "bg-yellow-500 text-white"
+                                        : "bg-yellow-50 text-yellow-700 hover:bg-yellow-100 border border-yellow-200"
+                                    }`}
+                                  >
+                                    Pending
+                                  </button>
+                                  <button
+                                    onClick={() => app.id && handleUpdateStatus(app.id, "COMPLETED")}
+                                    className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                                      app.status?.toUpperCase() === "COMPLETED"
+                                        ? "bg-blue-600 text-white"
+                                        : "bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200"
+                                    }`}
+                                  >
+                                    Complete
+                                  </button>
+                                  <button
+                                    onClick={() => app.id && handleUpdateStatus(app.id, "CANCELLED")}
+                                    className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                                      app.status?.toUpperCase() === "CANCELLED"
+                                        ? "bg-red-600 text-white"
+                                        : "bg-red-50 text-red-700 hover:bg-red-100 border border-red-200"
+                                    }`}
+                                  >
+                                    Cancel
+                                  </button>
                                 </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+
+                                <button
+                                  onClick={() => app.id && handleDeleteAppointment(app.id)}
+                                  className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition-colors cursor-pointer"
+                                  title="Delete Appointment"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
                   )}
                 </div>
               )}
@@ -1070,7 +1230,7 @@ export function AdminDashboard() {
               {/* TAB 4: PATIENTS                            */}
               {/* ========================================== */}
               {activeTab === "patients" && (
-                <div className="space-y-6 animate-fade-in bg-white border border-[#e8e0d8] rounded-3xl p-6 shadow-sm">
+                <div className="space-y-6 animate-fade-in bg-white border border-[#e8e0d8] rounded-3xl p-4 md:p-6 shadow-sm">
                   <div>
                     <h3 className="font-serif text-lg font-bold text-[#2d4538]">Patient Directory</h3>
                     <p className="text-xs text-[#8a9a90]">Auto-derived from active and historical appointment logs</p>
@@ -1081,41 +1241,111 @@ export function AdminDashboard() {
                       No patient profiles derived. Once patients book appointments, they will list here.
                     </div>
                   ) : (
-                    <div className="overflow-x-auto">
-                      <table className="w-full border-collapse text-left text-xs">
-                        <thead>
-                          <tr className="border-b border-[#e8e0d8] text-[#8a9a90] font-semibold uppercase tracking-wider">
-                            <th className="pb-3.5 pl-2">Patient Name</th>
-                            <th className="pb-3.5">Email Address</th>
-                            <th className="pb-3.5">Phone Number</th>
-                            <th className="pb-3.5 text-center">Visits Count</th>
-                            <th className="pb-3.5">Last Appointment</th>
-                            <th className="pb-3.5">Last Service</th>
-                            <th className="pb-3.5">Last Dentist Assigned</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-[#e8e0d8]/50">
-                          {uniquePatients().filter(pat => {
-                            const q = searchQuery.toLowerCase();
-                            return pat.name.toLowerCase().includes(q) || pat.email.toLowerCase().includes(q) || pat.phone.includes(q);
-                          }).map((pat, idx) => (
-                            <tr key={idx} className="hover:bg-[#f8f6f3]/50 transition-colors">
-                              <td className="py-4 pl-2 font-bold text-[#2d4538] text-sm">{pat.name}</td>
-                              <td className="py-4 font-semibold text-[#5a6a62]">{pat.email}</td>
-                              <td className="py-4 font-semibold text-[#5a6a62]">{pat.phone}</td>
-                              <td className="py-4 text-center">
-                                <span className="bg-[#7ba591]/15 text-[#4a6b5a] font-bold px-3 py-1 rounded-full text-xs">
-                                  {pat.visitCount}
-                                </span>
-                              </td>
-                              <td className="py-4 font-bold text-[#2d4538]">{pat.lastVisit}</td>
-                              <td className="py-4 font-medium text-[#7ba591]">{pat.lastService}</td>
-                              <td className="py-4">{pat.lastDoctor}</td>
+                    <>
+                      {/* Desktop Table View */}
+                      <div className="hidden lg:block overflow-x-auto">
+                        <table className="w-full border-collapse text-left text-xs">
+                          <thead>
+                            <tr className="border-b border-[#e8e0d8] text-[#8a9a90] font-semibold uppercase tracking-wider">
+                              <th className="pb-3.5 pl-2">Patient Name</th>
+                              <th className="pb-3.5">Email Address</th>
+                              <th className="pb-3.5">Phone Number</th>
+                              <th className="pb-3.5 text-center">Visits Count</th>
+                              <th className="pb-3.5">Last Appointment</th>
+                              <th className="pb-3.5">Last Service</th>
+                              <th className="pb-3.5">Last Dentist Assigned</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+                          </thead>
+                          <tbody className="divide-y divide-[#e8e0d8]/50">
+                            {uniquePatients().filter(pat => {
+                              const q = searchQuery.toLowerCase();
+                              return pat.name.toLowerCase().includes(q) || pat.email.toLowerCase().includes(q) || pat.phone.includes(q);
+                            }).map((pat, idx) => (
+                              <tr key={idx} className="hover:bg-[#f8f6f3]/50 transition-colors">
+                                <td className="py-4 pl-2 font-bold text-[#2d4538] text-sm">{pat.name}</td>
+                                <td className="py-4 font-semibold text-[#5a6a62]">{pat.email}</td>
+                                <td className="py-4 font-semibold text-[#5a6a62]">{pat.phone}</td>
+                                <td className="py-4 text-center">
+                                  <span className="bg-[#7ba591]/15 text-[#4a6b5a] font-bold px-3 py-1 rounded-full text-xs">
+                                    {pat.visitCount}
+                                  </span>
+                                </td>
+                                <td className="py-4 font-bold text-[#2d4538]">{pat.lastVisit}</td>
+                                <td className="py-4 font-medium text-[#7ba591]">{pat.lastService}</td>
+                                <td className="py-4">{pat.lastDoctor}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Mobile Cards List View */}
+                      <div className="lg:hidden space-y-4">
+                        {uniquePatients().filter(pat => {
+                          const q = searchQuery.toLowerCase();
+                          return pat.name.toLowerCase().includes(q) || pat.email.toLowerCase().includes(q) || pat.phone.includes(q);
+                        }).map((pat, idx) => {
+                          const initials = pat.name
+                            .split(" ")
+                            .map(n => n[0])
+                            .join("")
+                            .toUpperCase()
+                            .slice(0, 2) || "P";
+
+                          return (
+                            <div key={idx} className="bg-[#fcfbf9] border border-[#e8e0d8] rounded-2xl p-4 space-y-3 shadow-xs">
+                              {/* Header: Avatar, Name & Visit Count */}
+                              <div className="flex items-center justify-between gap-3">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#7ba591] to-[#6a9480] text-white font-bold flex items-center justify-center text-xs shadow-xs shrink-0">
+                                    {initials}
+                                  </div>
+                                  <div>
+                                    <h4 className="font-bold text-sm text-[#2d4538]">{pat.name}</h4>
+                                    <span className="text-[10px] text-[#8a9a90] font-medium">Patient Profile</span>
+                                  </div>
+                                </div>
+                                <span className="bg-[#7ba591]/15 text-[#4a6b5a] font-bold px-3 py-1 rounded-full text-xs shrink-0">
+                                  {pat.visitCount} {pat.visitCount === 1 ? 'visit' : 'visits'}
+                                </span>
+                              </div>
+
+                              {/* Contact Details */}
+                              <div className="space-y-1 text-xs text-[#5a6a62] bg-white p-3 rounded-xl border border-[#e8e0d8]/60">
+                                {pat.email && (
+                                  <a href={`mailto:${pat.email}`} className="flex items-center gap-2 text-[#7ba591] font-semibold hover:underline truncate">
+                                    <Mail className="h-3.5 w-3.5 shrink-0" />
+                                    <span className="truncate">{pat.email}</span>
+                                  </a>
+                                )}
+                                {pat.phone && (
+                                  <a href={`tel:${pat.phone}`} className="flex items-center gap-2 text-[#7ba591] font-semibold hover:underline">
+                                    <Phone className="h-3.5 w-3.5 shrink-0" />
+                                    <span>{pat.phone}</span>
+                                  </a>
+                                )}
+                              </div>
+
+                              {/* Last Visit Details */}
+                              <div className="grid grid-cols-3 gap-2 text-xs pt-1 border-t border-[#e8e0d8]">
+                                <div>
+                                  <span className="block text-[9px] font-bold text-[#8a9a90] uppercase">Last Visit</span>
+                                  <span className="font-bold text-[#2d4538]">{pat.lastVisit}</span>
+                                </div>
+                                <div>
+                                  <span className="block text-[9px] font-bold text-[#8a9a90] uppercase">Treatment</span>
+                                  <span className="font-medium text-[#7ba591] truncate block">{pat.lastService}</span>
+                                </div>
+                                <div>
+                                  <span className="block text-[9px] font-bold text-[#8a9a90] uppercase">Dentist</span>
+                                  <span className="font-medium text-[#2d4538] truncate block">{pat.lastDoctor}</span>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
                   )}
                 </div>
               )}
