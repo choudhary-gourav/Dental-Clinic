@@ -87,6 +87,19 @@ public class AppointmentService {
         Patient patient = patientrepo.findByEmail(dto.getPatientEmail())
                 .orElseThrow(() -> new RuntimeException("Patient profile not found. Please complete registration."));
 
+        // Sync and clean up patient name in DB if provided in DTO
+        if (dto.getPatientName() != null && !dto.getPatientName().trim().isEmpty()) {
+            String[] nameParts = dto.getPatientName().trim().split("\\s+");
+            String firstName = nameParts[0];
+            String lastName = nameParts.length > 1 ? String.join(" ", java.util.Arrays.copyOfRange(nameParts, 1, nameParts.length)) : "";
+            patient.setFirstName(firstName);
+            patient.setLastName(lastName);
+            if (dto.getPatientPhone() != null && !dto.getPatientPhone().trim().isEmpty()) {
+                patient.setPhone(dto.getPatientPhone().trim());
+            }
+            patientrepo.save(patient);
+        }
+
         Appointment appointment = new Appointment();
         appointment.setDoctor(doctor);
         appointment.setPatient(patient);
@@ -106,7 +119,9 @@ public class AppointmentService {
         Appointment savedAppointment = appointmentrepo.save(appointment);
 
         // 2. Invoke email service right after saving
-        String patientFullName = patient.getFirstName() + " " + patient.getLastName();
+        String rawLastName = patient.getLastName();
+        String lastNameStr = (rawLastName != null && !rawLastName.equalsIgnoreCase("Name")) ? rawLastName.trim() : "";
+        String patientFullName = (patient.getFirstName() + " " + lastNameStr).trim();
         emailService.sendEmail(
                 patient.getEmail(),
                 patientFullName,
