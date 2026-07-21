@@ -1,7 +1,6 @@
 package com.example.dentalclinic.Entity;
 
 import jakarta.persistence.*;
-
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -29,5 +28,35 @@ public class User {
     @Column(name = "PatentId")
     private Long patentId;
 
+    public String getUsername() {
+        return username;
+    }
 
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPasswordHash() {
+        return passwordHash;
+    }
+
+    public void setPasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public Long getPatentId() {
+        return patentId;
+    }
+
+    public void setPatentId(Long patentId) {
+        this.patentId = patentId;
+    }
 }
