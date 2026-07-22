@@ -11,16 +11,27 @@ import lombok.Setter;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "admin")
+@Getter
+@Setter
+@Table(name = "admins")
 public class Admin {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "adminId")
     private Long id;
 
+    @Column(name = "adminName")
     private String username;
+
+    @Column(name = "adminEmail")
     private String email;
+
+    @Column(name = "adminPassword")
     private String password;
+
+    @Column(name = "adminRole")
+    private String adminRole;
 
     public Long getId() {
         return id;
@@ -52,5 +63,13 @@ public class Admin {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getAdminRole() {
+        return adminRole;
+    }
+
+    public void setAdminRole(String adminRole) {
+        this.adminRole = adminRole;
     }
 }

@@ -189,6 +189,26 @@ class ApiService {
     return localStorage.getItem("dental_care_admin") !== null;
   }
 
+  async googleLogin(idToken: string): Promise<string> {
+    const response = await this.request<{ Message: string }>("/auth/google-login", {
+      method: "POST",
+      body: JSON.stringify({ idToken }),
+    });
+    return response.Message || "Logged in with Google successfully";
+  }
+
+  async getMatchedUserByEmail(email: string): Promise<User> {
+    const allUsers = await this.request<User[]>("/allusers");
+    const matchedUser = allUsers.find(
+      (u) => u.email.toLowerCase() === email.toLowerCase()
+    );
+
+    if (!matchedUser) {
+      throw new Error("Google login succeeded, but user profile was not found on the server.");
+    }
+    return matchedUser;
+  }
+
   logout(): void {
     localStorage.removeItem(USER_KEY);
   }

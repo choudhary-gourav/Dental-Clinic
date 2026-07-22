@@ -611,7 +611,7 @@ export function AdminDashboard() {
                     <div className="bg-white rounded-2xl border border-[#e8e0d8] p-5 shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
                       <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-600"></div>
                       <p className="text-[10px] font-bold uppercase tracking-wider text-[#8a9a90] mb-1">Est. Revenue</p>
-                      <h3 className="text-2xl md:text-3xl font-serif text-[#2d4538] font-bold">${totalRevenue}</h3>
+                      <h3 className="text-2xl md:text-3xl font-serif text-[#2d4538] font-bold">₹{totalRevenue}</h3>
                       <p className="text-[10px] text-[#5a6a62] mt-1">Sum of treatments cost</p>
                     </div>
                   </div>
@@ -622,7 +622,7 @@ export function AdminDashboard() {
                     <div className="bg-white border border-[#e8e0d8] rounded-3xl p-5 md:p-6 shadow-sm flex flex-col justify-between">
                       <div className="mb-4">
                         <h4 className="font-serif text-base font-bold text-[#2d4538]">6-Month Clinic Revenue</h4>
-                        <p className="text-xs text-[#8a9a90]">Dynamic calculations based on confirmed treatments ($)</p>
+                        <p className="text-xs text-[#8a9a90]">Dynamic calculations based on confirmed treatments (₹)</p>
                       </div>
                       <div className="h-72 w-full">
                         <ResponsiveContainer width="100%" height="100%">
