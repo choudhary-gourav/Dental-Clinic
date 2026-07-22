@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import {
   LayoutDashboard,
   Calendar,
@@ -65,6 +65,15 @@ const getServiceLabel = (serviceId: string) => {
 };
 
 export function AdminDashboard() {
+  const navigate = useNavigate();
+
+  // Security Check: Redirect to admin login if not logged in
+  useEffect(() => {
+    if (!apiService.isCurrentAdminLoggedIn()) {
+      navigate("/admin/login");
+    }
+  }, [navigate]);
+
   const [activeTab, setActiveTab] = useState<"dashboard" | "appointments" | "doctors" | "patients" | "settings">("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -476,12 +485,16 @@ export function AdminDashboard() {
             </div>
           </div>
           
-          <Link to="/">
-            <button className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-white/75 hover:bg-white/5 hover:text-white transition-colors text-left cursor-pointer">
-              <LogOut className="h-3.5 w-3.5 text-[#d4a574]" />
-              Back to Site
-            </button>
-          </Link>
+          <button
+            onClick={() => {
+              apiService.adminLogout();
+              navigate("/admin/login");
+            }}
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-white/75 hover:bg-white/5 hover:text-white transition-colors text-left cursor-pointer"
+          >
+            <LogOut className="h-3.5 w-3.5 text-[#d4a574]" />
+            Logout Admin
+          </button>
         </div>
       </aside>
 

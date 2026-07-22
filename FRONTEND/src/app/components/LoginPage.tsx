@@ -83,7 +83,7 @@ export function LoginPage() {
             Back to Home
           </Link>
           <Link
-            to="/admin"
+            to="/admin/login"
             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold border-2 border-[#7ba591]/20 bg-[#7ba591]/5 text-[#4a6b5a] hover:border-[#7ba591]/65 hover:bg-[#7ba591]/10 transition-all shadow-sm"
           >
             Admin Portal →

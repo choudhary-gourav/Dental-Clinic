@@ -36,5 +36,13 @@ public class AuthController {
         );
     }
 
-
+    @PostMapping("/admin/login")
+    public ResponseEntity<?> adminLogin(@RequestBody LoginRequest request) {
+        return ResponseEntity.ok(
+                new AuthResponse(
+                        authservice.adminLogin(request)
+                )
+        );
+    }
 }
+

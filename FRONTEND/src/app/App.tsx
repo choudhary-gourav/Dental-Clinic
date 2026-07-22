@@ -7,6 +7,7 @@ import { Testimonials } from "./components/Testimonials";
 import { Contact } from "./components/Contact";
 import { Footer } from "./components/Footer";
 import { LoginPage } from "./components/LoginPage";
+import { AdminLoginPage } from "./components/AdminLoginPage";
 import { BookAppointment } from "./components/BookAppointment";
 import { AdminDashboard } from "./components/AdminDashboard";
 
@@ -42,6 +43,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/admin/login" element={<AdminLoginPage />} />
         <Route path="/book" element={<BookAppointment />} />
         <Route path="/admin" element={<AdminDashboard />} />
       </Routes>

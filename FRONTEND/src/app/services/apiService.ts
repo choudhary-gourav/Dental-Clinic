@@ -165,9 +165,34 @@ class ApiService {
     return matchedUser;
   }
 
+  async adminLogin(email: string, password: string): Promise<string> {
+    const loginData: LoginRequest = {
+      email,
+      password,
+    };
+
+    const response = await this.request<{ Message: string }>("/auth/admin/login", {
+      method: "POST",
+      body: JSON.stringify(loginData),
+    });
+
+    // Save admin logged-in state
+    localStorage.setItem("dental_care_admin", JSON.stringify({ email }));
+    return response.Message || "Admin Logged Successfully";
+  }
+
+  adminLogout(): void {
+    localStorage.removeItem("dental_care_admin");
+  }
+
+  isCurrentAdminLoggedIn(): boolean {
+    return localStorage.getItem("dental_care_admin") !== null;
+  }
+
   logout(): void {
     localStorage.removeItem(USER_KEY);
   }
+
 
   getCurrentUser(): User | null {
     const userJson = localStorage.getItem(USER_KEY);
