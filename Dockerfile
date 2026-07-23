@@ -1,5 +1,7 @@
 # Stage 1: Build the React frontend
 FROM node:20-alpine AS frontend-build
+ARG VITE_GOOGLE_CLIENT_ID
+ENV VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
 WORKDIR /frontend
 COPY FRONTEND/package*.json ./
 RUN npm install

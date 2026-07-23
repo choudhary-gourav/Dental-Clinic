@@ -89,7 +89,7 @@ export function LoginPage() {
     const initializeGoogleSignIn = () => {
       if (typeof window !== "undefined" && (window as any).google) {
         (window as any).google.accounts.id.initialize({
-          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || "436154625290-7j9hgg24ebcr25268c1u4a0s73kbh3k9.apps.googleusercontent.com",
+          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || "185632946594-id2buoeefs98n83e0qbnhramva3uqu8q.apps.googleusercontent.com",
           callback: handleCredentialResponse,
         });
         (window as any).google.accounts.id.renderButton(
