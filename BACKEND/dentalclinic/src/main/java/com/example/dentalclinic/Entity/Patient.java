@@ -26,7 +26,8 @@ public class Patient {
     private String address;
 
     @OneToOne
-    @JoinColumn(name ="PatentId")
+    @JoinColumn( name = "PatentId",
+            referencedColumnName = "PatentId")
     User user;
 
     public Long getPatient_id() {
