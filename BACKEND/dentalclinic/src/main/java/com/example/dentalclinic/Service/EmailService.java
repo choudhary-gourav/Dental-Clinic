@@ -1,6 +1,7 @@
 package com.example.dentalclinic.Service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.scheduling.annotation.Async;
@@ -11,11 +12,14 @@ public class EmailService {
     @Autowired
     private JavaMailSender mailSender;
 
+    @Value("${spring.mail.username}")
+    private String fromEmail;
+
     @Async
     public void sendEmail(String toEmail, String patientName, String doctorName, String date, String time) {
         try{
             SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom("example@gmail.com");
+            message.setFrom(fromEmail);
             message.setTo(toEmail);
             message.setSubject("Appointment Confirmation - Dental Care Clinic");
             message.setText("Dear " + patientName + ",\n\n" +
@@ -30,7 +34,9 @@ public class EmailService {
             System.out.println("Confirmation email successfully sent to " + toEmail);
 
         }catch(Exception e){
-            System.err.println("Failed to send the Eamil to the Patient" + e.getMessage() );
+            System.err.println("Failed to send the Email to the Patient: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }
+
